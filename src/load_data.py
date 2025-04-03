@@ -2,15 +2,14 @@ import sqlite3
 import pandas as pd
 import sys
 import os
-
-sys.path.append(os.path.abspath('..'))  # Adds the parent directory to sys.path
+sys.path.append(os.path.abspath('..'))  
 from src import config
 
 import logging
 # Set up logging
 
 def load_data():
-    logging.info('Opening Excel Files...')
+    logging.info('Apertuira file excel...')
     df = pd.read_excel(os.path.join(config.RAW_DATA_PATH, 'Real estate valuation data set.xlsx'),
     index_col=0  # Ignoriamo la prima colonna trattandola come indice
     )

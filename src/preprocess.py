@@ -15,25 +15,17 @@ sys.path.append(os.path.abspath('..'))  # Adds the parent directory to sys.path
 from src import config
 
 def preprocess_data():
+    #Connessione al Database
 
-
-    # Download necessary resources
-    nltk.download('punkt')
-    nltk.download('punkt_tab')
-    nltk.download('stopwords')
-    nltk.download('wordnet')
-
-    # Connect to the database
     conn = sqlite3.connect(config.DATABASE_PATH)
 
-    # Read a table into a Pandas DataFrame
+    # Lettura della tabella inserita
     df = pd.read_sql_query(f"SELECT * FROM {config.RAW_TABLE}", conn)
 
-    # Apply preprocessing
-
+    #Applicazione dei Preprocessing
     df.to_sql(config.PROCESSED_TABLE, conn, if_exists='replace', index=False)
 
-    # Commit and close the connection
+    # Modifica del dataset
     conn.commit()
     conn.close()
 

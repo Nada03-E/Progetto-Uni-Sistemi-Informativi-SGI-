@@ -30,13 +30,13 @@ with col1:
 with col2:
     longitude = st.number_input("Longitudine", value=121.54, format="%.5f")
 
-# Maoppa cliccabile:
+# Mappa cliccabile:
 
 st.markdown("### Oppure clicca su una posizione nella mappa:")
 map_center = [latitude, longitude]
-m = folium.Map(location=map_center, zoom_start=15)
-m.add_child(folium.LatLngPopup())
-output = st_folium(m, width=700, height=400)
+map1 = folium.Map(location=map_center, zoom_start=12)
+map1.add_child(folium.LatLngPopup())
+output = st_folium(map1, width=700, height=400)
 
 #se l'utente preme sulla mappa la latyitudine e lonmgitudine vengono aggiornate automaticamente.
 if output and output.get("last_clicked"):
