@@ -1,4 +1,4 @@
-from src import config
+
 import sqlite3
 import pandas as pd
 import numpy as np
@@ -10,6 +10,7 @@ import os
 import sys
 import pickle
 sys.path.append(os.path.abspath('..'))  # Adds the parent directory to sys.path
+from src import config
 from sklearn import linear_model
 from sklearn.linear_model import LogisticRegression
 import logging
@@ -19,13 +20,14 @@ import logging
 def load_data():
     """Loads data from the SQLite database."""
     conn = sqlite3.connect(config.DATABASE_PATH)
-    query = f"SELECT cleaned_text, sentiment FROM {config.PROCESSED_TABLE}"
+    query = f"SELECT latitude, longitude, price FROM {config.PROCESSED_TABLE}"
     df = pd.read_sql_query(query, conn)
     conn.close()
     return df
 
 
-def train_model(grid_search=False):
+
+def train_model():
     """Trains a Random Forest model with GridSearchCV and saves evaluation metrics to CSV."""
     df = load_data().head(1000)
 
