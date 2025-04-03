@@ -1,44 +1,28 @@
 import os
 import sys
-sys.path.append(os.path.abspath('..'))
-from src import config  #streamlit run UI.py   python -m streamlit run UI.py
-import streamlit as st
 import pickle
 import streamlit as st
-from streamlit_option_menu import option_menu
-print(f"Looking for model at: {config.MODELS_PATH}random_forest.pkl")
+import pandas as pd
 
-#load the model and vectorizer
-with open(f"{config.MODELS_PATH}random_forest.pkl", 'rb') as file:
-    model1 = pickle.load(file)
-with open(f"{config.MODELS_PATH}logistic_regression.pkl", 'rb') as file:
-    model2 = pickle.load(file)
-#with open(f"{config.MODELS_PATH}naive_bayes.pkl", 'rb') as file:
- #   model3 = pickle.load(file)
-with open(f"{config.MODELS_PATH}vectorizer.pkl", 'rb') as file:
-    vectorizer = pickle.load(file)
+# Aggiungiamo la directory principale al path
+sys.path.append(os.path.abspath("..")) #streamlit run UI.py   python -m streamlit run UI.py
+from src import config
 
-st.title("Sentiment Analysis App")
-user_input = st.text_area("Enter a tweet","")
+# Carica il modello
+model_path = os.path.join(config.MODELS_PATH, "random_forest.pkl")
+with open(model_path, 'rb') as file:
+    model = pickle.load(file)
 
-with st.sidebar:
-    selected = option_menu("Main Menu", ["random_forest", 'logistic_regression', 'naive_bayes'],default_index=1)
-    selected
+# Titolo dell'app
+st.title("Previsione Prezzi Immobiliari")
+st.markdown("Inserisci la **latitudine** e la **longitudine** per stimare il prezzo per unità di superficie.")
 
-if st.button("Predict"):
-    if user_input.strip() == "":
-        st.write("Please enter a tweet.")
-    else:
-        #trasform imput and predict
-        X=vectorizer.transform([user_input])
-        if(selected == 'random_forest'):
-            model = model1
-        elif(selected == 'logistic_regression'):
-            model = model2  
-       # elif(selected == 'naive_bayes'):
-         #   model = model3
-        prediction = model.predict(X)[0]
-        if prediction=='positive':
-            st.success(f"Predicted class:{prediction}")
-        elif prediction== 'negative':
-            st.warning(f"Predicted class:{prediction}")
+# Input utente
+latitude = st.number_input("Latitudine", value=24.95, format="%.5f")
+longitude = st.number_input("Longitudine", value=121.54, format="%.5f")
+
+# Bottone per la previsione
+if st.button("Prevedi Prezzo"):
+    input_df = pd.DataFrame({"latitude": [latitude], "longitude": [longitude]})
+    prediction = model.predict(input_df)[0]
+    st.success(f"Prezzo stimato per unità di superficie: {prediction:.2f}")

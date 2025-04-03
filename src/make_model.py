@@ -1,118 +1,59 @@
-
 import sqlite3
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, r2_score
 import os
 import sys
 import pickle
-sys.path.append(os.path.abspath('..'))  # Adds the parent directory to sys.path
+
+sys.path.append(os.path.abspath('..'))
 from src import config
-from sklearn import linear_model
-from sklearn.linear_model import LogisticRegression
 import logging
-# Set up logging
 
 
 def load_data():
-    """Loads data from the SQLite database."""
     conn = sqlite3.connect(config.DATABASE_PATH)
-    query = f"SELECT latitude, longitude, price FROM {config.PROCESSED_TABLE}"
+    query = f"SELECT `X5 latitude` as latitude, `X6 longitude` as longitude, `Y house price of unit area` as price FROM {config.PROCESSED_TABLE}"
     df = pd.read_sql_query(query, conn)
     conn.close()
     return df
 
 
-
 def train_model():
-    """Trains a Random Forest model with GridSearchCV and saves evaluation metrics to CSV."""
-    df = load_data().head(1000)
+    logging.info("Loading data for training...")
+    df = load_data()
+    X = df[["latitude", "longitude"]]
+    y = df["price"]
 
-    # Save original indices before vectorization
-    df_indices = df.index
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Feature extraction
-    vectorizer = TfidfVectorizer()
-    X = vectorizer.fit_transform(df['cleaned_text'])
-    y = df['sentiment']
+    model = RandomForestRegressor(random_state=42)
+    model.fit(X_train, y_train)
 
-    with open(f"{config.MODELS_PATH}vectorizer.pkl", 'wb') as f:
-        pickle.dump(vectorizer, f)
+    y_pred = model.predict(X_test)
 
+    mse = mean_squared_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
 
-    # Train-test split (preserve indices)
-    X_train, X_test, y_train, y_test, train_idx, test_idx = train_test_split(
-        X, y, df_indices, test_size=0.2, random_state=42
-    )
+    logging.info(f"Model evaluation - MSE: {mse}, R2: {r2}")
 
-    if grid_search:
-        rf = RandomForestClassifier(random_state=42)
-        param_grid = {
-            'n_estimators': [50, 100, 200],
-            'max_depth': [None, 10, 20],
-            'min_samples_split': [2, 5, 10]
-        }
+    # Save model
+    os.makedirs(config.MODELS_PATH, exist_ok=True)
+    with open(os.path.join(config.MODELS_PATH, "random_forest.pkl"), "wb") as f:
+        pickle.dump(model, f)
 
-        grid_search = GridSearchCV(rf, param_grid, cv=3, scoring='accuracy', n_jobs=-1, verbose=1)
-        grid_search.fit(X_train, y_train)
+    # Save predictions (optional)
+    test_df = X_test.copy()
+    test_df["actual"] = y_test.values
+    test_df["predicted"] = y_pred
 
-        best_model = grid_search.best_estimator_
-        y_pred = best_model.predict(X_test)
-    
-    else:
-        rf = RandomForestClassifier()
-        rf.fit(X_train, y_train)
-        y_pred = rf.predict(X_test)
-        
-    
-    # Logistic Regression for comparison    
-    logr = LogisticRegression()
-    logr.fit(X_train, y_train)
-    y_pred = logr.predict(X_test)
-    
-    # Nayve Bayes
- #   NB=linear_model.GaussianNB()
-  #  NB.fit(X,y)()
-   # y_pred = rf.predict(X)
-
-    logging.info('saving models')
-#    with open(os.path.join(config.MODELS_PATH, "random_forest.pkl"), 'wb') as file:
-#        pickle.dump(rf, file)   
-    with open("../models/random_forest.pkl", 'wb') as file:
-        pickle.dump(rf, file)
-    with open("../models/logistic_regression.pkl", 'wb') as file:
-        pickle.dump(rf, file)
-#    with open("../models/Nayve_bayes.pkl", 'wb') as file:
- #       pickle.dump(rf, file)
-    # Create a DataFrame for the test set with predictions
-    test_df = df.loc[test_idx].copy()  # Copy test set rows
-    test_df['prediction'] = y_pred  # Add predictions
-
-    
- 
-    
-
-    # Compute metrics
-    metrics = {
-        'accuracy': accuracy_score(y_test, y_pred),
-        'precision': precision_score(y_test, y_pred, average='weighted', zero_division=0),
-        'recall': recall_score(y_test, y_pred, average='weighted', zero_division=0),
-        'f1_score': f1_score(y_test, y_pred, average='weighted', zero_division=0)
-    }
-
-    # Connect to the database
     conn = sqlite3.connect(config.DATABASE_PATH)
-
-    # saving predictions
-    test_df.to_sql(config.PREDICTIONS_TABLE, conn, if_exists='replace', index=False)
-    
-    # saving grid search results
-    metrics_df = pd.DataFrame([metrics])
-    metrics_df.to_sql(config.EVALUATION_TABLE, conn,
-                      if_exists='replace', index=False)
-    # Commit and close the connection
+    test_df.to_sql(config.PREDICTIONS_TABLE, conn, if_exists="replace", index=False)
     conn.commit()
     conn.close()
+
+    logging.info("Model training and saving completed.")
+
+#finito si

@@ -15,7 +15,7 @@ def load_data():
     index_col=0  # Ignoriamo la prima colonna trattandola come indice
     )
 
-    df = df[['X1 transaction date', 'X2 housea ge', 'X3 distance to the nearest MRT station', 'X4 number of convenience stores', 'X5 latitude', 'X6 longitude', 'Y house price of unit area']]
+    df = df[['X1 transaction date', 'X2 house age', 'X3 distance to the nearest MRT station', 'X4 number of convenience stores', 'X5 latitude', 'X6 longitude', 'Y house price of unit area']]
 
     df.reset_index(drop=True, inplace=True)
     
